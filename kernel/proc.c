@@ -5,10 +5,11 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "syscall.h"
 
 struct cpu cpus[NCPU];
 
-struct proc proc[NPROC];
+struct proc proc[NPROC];//each element of it is struct proc
 
 struct proc *initproc;
 
@@ -25,6 +26,180 @@ extern char trampoline[]; // trampoline.S
 // memory model when using p->parent.
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
+
+
+//return the number of process_______________________wangyao 
+int getpcount(void){
+  struct proc *p;
+  int count =0;
+  for(p=proc;p<&proc[NPROC];p++){
+    acquire(&p->lock);
+    if(p->state!=UNUSED)count++;
+   release(&p->lock);
+  }
+  return count;
+}
+int atoi(char *s) {
+    int num = 0;
+    int sign = 1;
+    while (*s == ' ')
+        s++;
+
+    if (*s == '-') {
+        sign = -1;
+        s++;
+    } else if (*s == '+') {
+        s++;
+    }
+
+    while (*s >= '0' && *s <= '9') {
+        num = num * 10 + (*s - '0');
+        s++;
+    }
+
+    return sign * num;
+}
+
+
+struct used_block{
+ struct block *used_block;
+ int id;
+};
+
+struct used_block used_list[100];
+
+void 
+allocate_memory(void){
+  char buf[100];
+  printf("please enter the size you want to allocate:\n");
+   consoleread(0,(uint64)buf,sizeof(buf));
+  int size=atoi(buf);
+  printf("please enter the id for the block\n");
+  char buf0[100];
+  consoleread(0,(uint64)buf0,sizeof(buf0));
+  int id=atoi(buf0);
+  printf("try to allocate a %p area,id is %d \n",size,id);
+  char *pointer=buddy_malloc(size);
+  if(pointer){
+    int i;
+    for( i=0;i<100;i++){
+      if(used_list[i].used_block==0){
+         used_list[i].used_block = (struct block *)pointer; // Assuming struct block *used_block points to the allocated block
+         used_list[i].id = id;
+                break;
+      }
+    }
+    if(i==100){
+      printf("ERROR:used_list is full\n");
+    }
+  }else{
+    printf("ERROR:allocate failed.");
+  }
+show();
+}
+
+void
+free_memory(void){
+  char buf[100];
+  printf("please enter the num of block you want to free:\n");
+  consoleread(0,(uint64)buf,sizeof(buf));
+  int id=atoi(buf);
+ // Find the block in used_list and free it
+    int i;
+    for (i = 0; i < 100; i++) {
+        if (used_list[i].used_block != 0 && used_list[i].id == id) {
+            struct block *ptr = used_list[i].used_block; // Assuming used_block is a pointer to the allocated block
+            buddy_free(ptr); // Free the memory block
+            used_list[i].used_block = 0; // Clear the entry in used_list
+            used_list[i].id = 0; // Reset the id
+            printf("Block with id %d freed successfully.\n", id);
+            break;
+        }
+    }
+     if (i == 100) {
+        printf("Error: Block with id %d not found.\n", id);
+    }
+  show();
+
+}
+//allocate memory______________________________wangyao 
+// extern void *buddy_malloc(uint64 size);  
+// extern void buddy_free(void *pointer);
+int
+test_malloc(void){
+  char buf[100];
+  int flag=1;
+  while(flag){
+   printf("Choose an option:\n");
+   printf("1 Allocate Memory\n");
+   printf("2 Free Memory\n");
+   printf("3 Quit\n");
+   printf("4 show the heap\n");
+   printf("please enter your choice:\n");
+   consoleread(0,(uint64)buf,sizeof(buf));
+  int choice=atoi(buf);
+  switch(choice){
+    case 1:
+      allocate_memory();
+      break;
+    case 2:
+      free_memory();
+      break;
+    case 3:
+      flag=0;
+      break;
+    case 4:
+      show();
+      break;
+    default:
+      printf("Invalid choice.\n");
+      break;
+  }
+  }
+   
+
+  //   printf("try to allocate a 16MB+2B area \n");
+  //   char *pointer0=(char *)buddy_malloc(16*1024*1024+2);
+  //   if(pointer0){
+  //   buddy_free(pointer0);
+  //   printf("free pointer0\n"); 
+  //   show();
+  //   }
+  //   char *pointer1=(char *)buddy_malloc(100);
+  //   printf("allocate 100B at %p\n",pointer1);
+  //   show();
+
+  //   char *pointer2=(char *)buddy_malloc(100000);
+  //   printf("allocate 100000B at %p\n",pointer2);
+  //   show();
+  //   char *pointer3=(char *)buddy_malloc(2000000);
+  //   printf("allocate 2000000B at %p\n",pointer3);
+  //   show();
+  //    if(pointer1)
+  //   {buddy_free(pointer1);
+  //   printf("free pointer1\n"); 
+  //   show();
+  //   }
+
+  //   if(pointer2){
+  //   buddy_free(pointer2);
+  //   printf("free pointer2\n");
+  //   show();
+  //   }else{
+  //     printf("p2 not exist");
+  //   }
+
+  //   if(pointer3){
+  //   buddy_free(pointer3);
+  //   printf("free pointer3\n");
+  //  show();
+  //   }else{
+  //     printf("p3 not exist");
+  //   }
+  //   show();
+    return 23;
+}
+
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -681,3 +856,5 @@ procdump(void)
     printf("\n");
   }
 }
+
+

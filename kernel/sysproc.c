@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "syscall.h"
 
 uint64
 sys_exit(void)
@@ -89,3 +90,16 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_getpcount(void){
+  return getpcount();
+  }
+
+
+uint64 
+sys_test_malloc(void){
+  //test_malloc(); //call kernel 
+  return test_malloc();
+}
+

@@ -21,7 +21,7 @@ void            bunpin(struct buf*);
 void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
-
+int             consoleread(int user_dst, uint64 dst, int n);
 // exec.c
 int             exec(char*, char**);
 
@@ -63,6 +63,11 @@ void            ramdiskrw(struct buf*);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+//buddy_system
+void            buddy_init(void *heap_start, void *heap_end);
+void*           buddy_malloc(uint64 size);
+void            buddy_free(void *pointer);
+void            show();
 
 // log.c
 void            initlog(int, struct superblock*);
@@ -106,7 +111,8 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
-
+int        test_malloc(void); 
+int         getpcount(void);
 // swtch.S
 void            swtch(struct context*, struct context*);
 
@@ -140,6 +146,8 @@ void            argaddr(int, uint64 *);
 int             fetchstr(uint64, char*, int);
 int             fetchaddr(uint64, uint64*);
 void            syscall();
+
+
 
 // trap.c
 extern uint     ticks;
